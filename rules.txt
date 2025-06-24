@@ -1,0 +1,22 @@
+🧩 Generalized Tower of Hanoi
+
+✅ Problem Definition (n towers, m rings):
+You are given:
+
+m rings, each a different size (1 is the smallest, m is the largest).
+
+n towers (or pegs), where typically only one tower starts with all m rings arranged in descending order from bottom to top.
+
+🎯 Goal:
+Move all m rings from the source tower to a target tower, with the final stack in ascending order (smallest on top), using n total towers.
+
+⚙️ Rules:
+Only one ring can be moved at a time.
+
+You can only move the topmost ring from any tower.
+
+You cannot place a larger ring on top of a smaller ring.
+
+Use the other towers as intermediate storage.
+
+All towers are available for use unless otherwise specified.
