@@ -1,8 +1,16 @@
+class node:
+    # used to store the state of board
+    def __init__(self,state,parent = None,action = None):
+        self.state = state
+        self.parent = parent
+        self.action = action
+
+
 class puzzle:
     def __init__(self,numOfTower = 3,numOfRings = 3):
         self.towers = numOfTower
         self.rings = numOfRings
-        self.board = [""] * self.towers # Will store int as 123 where 3 is  on top and largest ring 
+        self.board = [[] for i in range(self.towers)] # Will store int as 1 2 3 where 3 is  on top and largest ring 
     
     def __valide_input(self,num):
         """take valid index from user for the board
@@ -14,9 +22,10 @@ class puzzle:
             return False
         return True
     
-    def initialize_board(self):
+    def initialize_board_FromInput(self):
             count = self.rings
             avail = {s for s in range(1,self.rings+1)}
+            self.board = [[] for i in range(self.towers)]
             while count>0:
                 try:
                     x = int(input(f"Enter index for ring number {self.rings - count + 1} (1 to {self.towers}) "))
@@ -41,6 +50,8 @@ class puzzle:
                         try:
                             print(f"available size options {avail}")    
                             print()
+                            print(f"BOARD=> {self.board}")
+                            print()
                             size = int(input(f"size of ring (1 is smallest and {self.rings} is largest) : "))    
                             
                         except ValueError :
@@ -58,14 +69,61 @@ class puzzle:
                                 print()
                                 continue
                             avail.remove(size)
-                            self.board[x-1] += str(size) 
+                            self.board[x-1].append(size)
                             break
+            print(self.board)            
         
-    def __valid_board(self):
-        pass
-    
+    def valid_board(self):
+        """is the input board valid?
+        Returns:
+            (bool) 
+        """
+        for i in range(len(self.board)):
+            ele = self.board[i]
+            if len(ele)<=1:
+                continue
+            for j in range(1,len(ele)):
+                    if int(ele[j]-1) <= int(ele[j]):
+                        return False
+        return True            
+                        
+                
+    def isgoal(self):
+        # wether the state is the goal 
+        index = -1 # Index of the rings in tower
+        # all must be in the same tower 
+        for i in range(len(self.board)):
+            if len(self.board[i]>0):
+                if index==-1:
+                    index = i
+                else:
+                    return False
+        if index==-1:
+            raise Exception ("invalide board no ring found")
+        
+        for i in range(1,len(self.board[index])):
+            if self.board[index][i-1] <= self.board[index][i]: # Must be in decreasing order
+                return False   
+        
+        return True                          
+                        
     def availalble_moves(self):                           
-        pass
+        """used for solver
+
+        Returns {move:state produced} => dict
+        """
+        moves = {}
+        for i in range(len(self.board)):
+            if len(self.board[i]) <= 0:
+                # no ring in this tower
+                continue
+            size = self.board[i][-1]
+            # the top ring
+            for j in range(1,len(self.board)):
+                move_str = f"{i}=>{j}"
+                if move_str in moves:
+                    continue
+                
     
 def taking_input_ints():
     """
@@ -113,9 +171,19 @@ def taking_input_ints():
     return temp           
                 
 def main():
-    input_taken = taking_input_ints()
-    game = puzzle(input_taken[0],input_taken[1])
-    game.initialize_board()
+    answer = False
+    while not(answer):
+        input_taken = taking_input_ints()
+        game = puzzle(input_taken[0],input_taken[1])
+        game.initialize_board_FromInput()
+        answer = (game.valid_board())
+        if not(answer):
+            print()
+            print("invalide board all rings must be in accending order form top")
+            print()
+    
+            
+        
     
 if __name__=="__main__":
     main()        
