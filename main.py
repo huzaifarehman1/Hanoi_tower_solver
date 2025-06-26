@@ -1,17 +1,32 @@
 class node:
     # used to store the state of board
-    def __init__(self,state,parent = None,action = None):
+    def __init__(self,state,parent = None,action = None,cost = 0,distance = 0):
         self.state = state
         self.parent = parent
         self.action = action
+        self.cost = cost # heuristic cost of state
+        self.dis_from_start = distance # step moves distance from start state
 
+
+class FRONTIER:
+    def __init__(self):
+        pass
+    
+    def pop(self):
+        pass
+    
+    def push(self):
+        pass
 
 class puzzle:
-    def __init__(self,numOfTower = 3,numOfRings = 3):
+    def __init__(self,numOfTower = 3,numOfRings = 3,board = None):
         self.towers = numOfTower
         self.rings = numOfRings
-        self.board = [[] for i in range(self.towers)] # Will store int as 1 2 3 where 3 is  on top and largest ring 
-    
+        if board is None:
+            self.board = [[] for i in range(self.towers)] # Will store int as 1 2 3 where 3 is  on top and largest ring 
+        else:
+            self.board = [i[::] for i in board]
+            
     def __valide_input(self,num):
         """take valid index from user for the board
         """
@@ -72,6 +87,14 @@ class puzzle:
                             self.board[x-1].append(size)
                             break
             print(self.board)            
+    
+    def heuristicFunction(self,dis_From_start):
+        cost = 0
+        for i in range(self.towers):
+            if len(self.board[i])<=0:
+                continue
+            
+        return cost + dis_From_start    
         
     def valid_board(self):
         """is the input board valid?
@@ -107,10 +130,10 @@ class puzzle:
         
         return True                          
                         
-    def availalble_moves(self):                           
+    def availalblemoves_AND_costValueOfState(self):                           
         """used for solver
 
-        Returns {move:state produced} => dict
+        Returns {move:(state produced} => dict
         """
         moves = {}
         for i in range(len(self.board)):
@@ -119,10 +142,17 @@ class puzzle:
                 continue
             size = self.board[i][-1]
             # the top ring
-            for j in range(1,len(self.board)):
+            for j in range(i+1,len(self.board)):
                 move_str = f"{i}=>{j}"
                 if move_str in moves:
                     continue
+                if len(self.board[j])<=0:
+                    ele = self.board[i].pop()
+                    self.board[j].append(ele)
+                    # copy and push
+                    newboard = puzzle(self.towers,self.rings,self.board)
+                    self.board[i].append(ele)
+                
                 
     
 def taking_input_ints():
@@ -170,6 +200,15 @@ def taking_input_ints():
     
     return temp           
                 
+
+
+def SOLVER(board:puzzle): # uses A*
+    seen = set() # states seen so far
+    frontier = FRONTIER()
+
+
+
+
 def main():
     answer = False
     while not(answer):
