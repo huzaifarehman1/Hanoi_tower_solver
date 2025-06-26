@@ -1,3 +1,5 @@
+import heapq
+
 class node:
     # used to store the state of board
     def __init__(self,state,parent = None,action = None,cost = 0,distance = 0,hashed = None):
@@ -6,18 +8,37 @@ class node:
         self.action = action
         self.cost = cost # heuristic cost of state
         self.dis_from_start = distance # step moves distance from start state
-        self.hashable_state = hashed
+        self.hashable_state = hashed# hashable state so it can be put into seen set
 
-class FRONTIER:
+    def __lt__(self, other):
+        if self.cost+self.dis_from_start == other.cost+other.dis_from_start:
+            return self.dis_from_start>other.dis_from_start # same H value so deeper is better
+        # because if H is same then deep have better goal distance 
+        
+        elif self.cost+self.dis_from_start < other.cost+other.dis_from_start:  # lower cost = higher priority
+            return True
+        return False
+
+
+
+class FRONTIER: 
     maximum = 100000005
     def __init__(self):
         self.count = 0
+        self.heap = []
     
     def pop(self):
-        pass
+        if self.isempty():
+            raise Exception("EMPTY!!!")
+        ele = heapq.heappop(self.heap)
+        self.count -= 1
+        return ele
     
-    def push(self):
-        pass
+    def push(self,ele:node):
+        if self.isfull():
+            print("FULL")
+        self.count += 1
+        heapq.heappush(self.heap,ele)
     
     def isempty(self):
         return self.count<=0
@@ -96,6 +117,14 @@ class puzzle:
             print(self.board)            
     
     def heuristicFunction(self,dis_From_start):
+        """
+            return heuristic value
+        Args:
+            dis_From_start (_nt): distence of a state from given start state
+
+        Returns:
+            int: heuristic value
+        """
         cost = 0
         for i in range(self.towers):
             if len(self.board[i])<=0:
@@ -225,6 +254,8 @@ def SOLVER(board:puzzle): # uses A*
     frontier = FRONTIER() # to store states
     start = node(board,None,None,board.heuristicFunction(0),0,board.hashable_type())
     states_seen_count = 0
+
+    frontier.push(start)
     while not(frontier.isempty()):
         ele:node = frontier.pop()
         state:puzzle = ele.state
@@ -242,16 +273,18 @@ def SOLVER(board:puzzle): # uses A*
         
         seen.add(ele.hashable_state)
         moves:dict = state.availalblemoves_AND_costValueOfState(ele.dis_from_start)    
-        
+        # creating and adding child 
         for action,produced in moves.items():
             NewPuzzleObj:puzzle = produced[0]
             cost = produced[1]
             hashed = NewPuzzleObj.hashable_type()
             if hashed not in seen:
-                newnode = node(NewPuzzleObj,state,action,cost,ele.dis_from_start+1)
+                newnode = node(NewPuzzleObj,state,action,cost,ele.dis_from_start+1,hashed)
+                FRONTIER.push(newnode)
+                seen.add(hashed)
             
             
-            
+    # no solution found        
     print("NO SOLUTION FOUND")    
     return (states_seen_count,act)
 
