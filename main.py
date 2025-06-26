@@ -1,22 +1,29 @@
 class node:
     # used to store the state of board
-    def __init__(self,state,parent = None,action = None,cost = 0,distance = 0):
+    def __init__(self,state,parent = None,action = None,cost = 0,distance = 0,hashed = None):
         self.state = state
         self.parent = parent
         self.action = action
         self.cost = cost # heuristic cost of state
         self.dis_from_start = distance # step moves distance from start state
-
+        self.hashable_state = hashed
 
 class FRONTIER:
+    maximum = 100000005
     def __init__(self):
-        pass
+        self.count = 0
     
     def pop(self):
         pass
     
     def push(self):
         pass
+    
+    def isempty(self):
+        return self.count<=0
+    
+    def isfull(self):
+        return self.count>=self.maximum
 
 class puzzle:
     def __init__(self,numOfTower = 3,numOfRings = 3,board = None):
@@ -130,30 +137,40 @@ class puzzle:
         
         return True                          
                         
-    def availalblemoves_AND_costValueOfState(self):                           
+    def availalblemoves_AND_costValueOfState(self,parentcost):   # find available moves and heuristic value as well                        
         """used for solver
 
-        Returns {move:(state produced} => dict
+        Returns {move:(state produced,cost)} => dict
         """
         moves = {}
         for i in range(len(self.board)):
+            
             if len(self.board[i]) <= 0:
                 # no ring in this tower
                 continue
+            
             size = self.board[i][-1]
             # the top ring
+            
             for j in range(i+1,len(self.board)):
                 move_str = f"{i}=>{j}"
                 if move_str in moves:
                     continue
-                if len(self.board[j])<=0:
+            
+                if len(self.board[j])<=0 or self.board[j][-1]>size:
                     ele = self.board[i].pop()
                     self.board[j].append(ele)
-                    # copy and push
                     newboard = puzzle(self.towers,self.rings,self.board)
-                    self.board[i].append(ele)
+                    cost = None
+                    
+                    self.board[i].append(ele)  
+                    moves[move_str] = (newboard,cost+parentcost+1) # cause it the next state so +1 
                 
-                
+    def hashable_type(self):
+        """
+        convert a state to hasable state
+        """
+        return tuple(tuple(i) for i in self.board)           
     
 def taking_input_ints():
     """
@@ -203,9 +220,40 @@ def taking_input_ints():
 
 
 def SOLVER(board:puzzle): # uses A*
+    
     seen = set() # states seen so far
-    frontier = FRONTIER()
-
+    frontier = FRONTIER() # to store states
+    start = node(board,None,None,board.heuristicFunction(0),0,board.hashable_type())
+    states_seen_count = 0
+    while not(frontier.isempty()):
+        ele:node = frontier.pop()
+        state:puzzle = ele.state
+        states_seen_count += 1
+        if state.isgoal():
+            print("FOUND SOLUTION")
+            act = []
+            while (ele.parent is not None):
+                act.append(ele.action)
+                ele = ele.parent
+                
+                return (states_seen_count,act)   
+            
+        # look at child if no solution at this state
+        
+        seen.add(ele.hashable_state)
+        moves:dict = state.availalblemoves_AND_costValueOfState(ele.dis_from_start)    
+        
+        for action,produced in moves.items():
+            NewPuzzleObj:puzzle = produced[0]
+            cost = produced[1]
+            hashed = NewPuzzleObj.hashable_type()
+            if hashed not in seen:
+                newnode = node(NewPuzzleObj,state,action,cost,ele.dis_from_start+1)
+            
+            
+            
+    print("NO SOLUTION FOUND")    
+    return (states_seen_count,act)
 
 
 
