@@ -2,14 +2,15 @@ import heapq
 
 class node:
     # used to store the state of board
-    def __init__(self,state,parent = None,action = None,cost = 0,distance = 0,hashed = None):
+    def __init__(self,state,parent = None,action = None,cost = 0,distance = 0,hashed = None,max_ring_position = (0,0)):
         self.state = state
         self.parent = parent
         self.action = action
         self.cost = cost # heuristic cost of state
         self.dis_from_start = distance # step moves distance from start state
         self.hashable_state = hashed# hashable state so it can be put into seen set
-
+        self.max_ring_position = max_ring_position # position of the biggest ring in the board
+        
     def __lt__(self, other):
         if self.cost+self.dis_from_start == other.cost+other.dis_from_start:
             return self.dis_from_start>other.dis_from_start # same H value so deeper is better
@@ -47,13 +48,15 @@ class FRONTIER:
         return self.count>=self.maximum
 
 class puzzle:
-    def __init__(self,numOfTower = 3,numOfRings = 3,board = None):
+    def __init__(self,numOfTower = 3,numOfRings = 3,board = None,position = (0,0)):
         self.towers = numOfTower
         self.rings = numOfRings
         if board is None:
             self.board = [[] for i in range(self.towers)] # Will store int as 1 2 3 where 3 is  on top and largest ring 
         else:
             self.board = [i[::] for i in board]
+        
+        self.max =  position # position of the maximum ring    
             
     def __valide_input(self,num):
         """take valid index from user for the board
@@ -116,19 +119,41 @@ class puzzle:
                             break
             print(self.board)            
     
-    def heuristicFunction(self,dis_From_start):
+    def find_max_ring(self):
+        for i in range(self.towers):
+            for j in range(len(self.board[i])):
+                if self.board[i][j]==self.rings:
+                    self.max == (i,j)
+                    return True
+        return False        
+    
+    def heuristicFunction(self,dis_From_start,position):
         """
             return heuristic value
+            
         Args:
-            dis_From_start (_nt): distence of a state from given start state
+            dis_From_start (int): distence of a state from given start state
+            position (tuple):position of the largest ring in the board
 
         Returns:
             int: heuristic value
         """
         cost = 0
+        spread = 0
+        correct = 1
         for i in range(self.towers):
             if len(self.board[i])<=0:
                 continue
+            spread += 1
+        pos1,pos2 = position
+        for i in range(len(self.board[pos1])):
+            if i<=0:
+                continue
+            if self.board[pos1][i-1]==self.board[pos1][i]+1:
+                correct += 1
+            else:
+                break    
+        cost =  spread - pow(correct,2)  
             
         return cost + dis_From_start    
         
@@ -142,7 +167,7 @@ class puzzle:
             if len(ele)<=1:
                 continue
             for j in range(1,len(ele)):
-                    if int(ele[j]-1) <= int(ele[j]):
+                    if ele[j-1] <= ele[j]:
                         return False
         return True            
                         
@@ -152,7 +177,7 @@ class puzzle:
         index = -1 # Index of the rings in tower
         # all must be in the same tower 
         for i in range(len(self.board)):
-            if len(self.board[i]>0):
+            if len(self.board[i])>0:
                 if index==-1:
                     index = i
                 else:
@@ -166,7 +191,7 @@ class puzzle:
         
         return True                          
                         
-    def availalblemoves_AND_costValueOfState(self,parentcost):   # find available moves and heuristic value as well                        
+    def availalblemoves(self,parentcost):   # find available moves and heuristic value as well                        
         """used for solver
 
         Returns {move:(state produced,cost)} => dict
@@ -177,24 +202,28 @@ class puzzle:
             if len(self.board[i]) <= 0:
                 # no ring in this tower
                 continue
-            
             size = self.board[i][-1]
             # the top ring
             
-            for j in range(i+1,len(self.board)):
+            for j in range(len(self.board)):
+                if j==i:
+                    continue
                 move_str = f"{i}=>{j}"
                 if move_str in moves:
                     continue
-            
-                if len(self.board[j])<=0 or self.board[j][-1]>size:
-                    ele = self.board[i].pop()
-                    self.board[j].append(ele)
-                    newboard = puzzle(self.towers,self.rings,self.board)
-                    cost = None
-                    
-                    self.board[i].append(ele)  
-                    moves[move_str] = (newboard,cost+parentcost+1) # cause it the next state so +1 
                 
+                if size==self.rings: 
+                    new_max_position = (j,len(self.board[j]))
+                else:    
+                    new_max_position = self.max
+                                
+                if len(self.board[j])<=0 or self.board[j][-1]>size:
+                    newboard = puzzle(self.towers,self.rings,self.board,new_max_position)
+                    ele = newboard.board[i].pop()
+                    newboard.board[j].append(ele)  
+                    cost = newboard.heuristicFunction(parentcost+1,new_max_position)
+                    moves[move_str] = (newboard,cost,new_max_position) # cause it the next state so +1 
+        return moves        
     def hashable_type(self):
         """
         convert a state to hasable state
@@ -252,7 +281,10 @@ def SOLVER(board:puzzle): # uses A*
     
     seen = set() # states seen so far
     frontier = FRONTIER() # to store states
-    start = node(board,None,None,board.heuristicFunction(0),0,board.hashable_type())
+    max_ = board.find_max_ring()
+    if not(max_):
+        raise Exception ("FAILED TO FIND LARGEST RING")
+    start = node(board,None,None,board.heuristicFunction(0,board.max),0,board.hashable_type())
     states_seen_count = 0
 
     frontier.push(start)
@@ -263,24 +295,27 @@ def SOLVER(board:puzzle): # uses A*
         if state.isgoal():
             print("FOUND SOLUTION")
             act = []
+            
             while (ele.parent is not None):
                 act.append(ele.action)
                 ele = ele.parent
-                
-                return (states_seen_count,act)   
+            act = act[::-1]    
+            return (states_seen_count,act)   
             
         # look at child if no solution at this state
         
         seen.add(ele.hashable_state)
-        moves:dict = state.availalblemoves_AND_costValueOfState(ele.dis_from_start)    
+        moves:dict = state.availalblemoves(ele.dis_from_start)    
         # creating and adding child 
         for action,produced in moves.items():
             NewPuzzleObj:puzzle = produced[0]
             cost = produced[1]
+            pos = produced[2]
             hashed = NewPuzzleObj.hashable_type()
+
             if hashed not in seen:
-                newnode = node(NewPuzzleObj,state,action,cost,ele.dis_from_start+1,hashed)
-                FRONTIER.push(newnode)
+                newnode = node(NewPuzzleObj,ele,action,cost,ele.dis_from_start+1,hashed,pos)
+                frontier.push(newnode)
                 seen.add(hashed)
             
             
@@ -301,9 +336,20 @@ def main():
             print()
             print("invalide board all rings must be in accending order form top")
             print()
+    seen,sol = SOLVER(game)
+    print(f"state seen = {seen}")
+    print("solution")
+    print(sol)
     
             
         
     
-if __name__=="__main__":
-    main()        
+if __name__=="_main__":
+    main()
+else: # if you want to test certain parts
+    state = board = [[2], [5, 1], [4], [3]] 
+    rings = 5
+    position = (1,0) # (tower number , height) for the largest ring all is 0 indexed
+    game = puzzle(len(state),rings,state,position)  
+    print(x:=SOLVER(game),len(x[1])) 
+         
