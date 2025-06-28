@@ -208,7 +208,7 @@ class puzzle:
             for j in range(len(self.board)):
                 if j==i:
                     continue
-                move_str = f"{i}=>{j}"
+                move_str = f"{i+1}=>{j+1}"
                 if move_str in moves:
                     continue
                 
