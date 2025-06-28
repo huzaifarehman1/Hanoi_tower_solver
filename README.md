@@ -25,6 +25,9 @@ it uses A* to solve the puzzle by continuesly storing its child and visiting bes
 
 the heuristic Function or the evaluation of state is based on following
 
-1: 
+1: the more spread out the better it is to make choice toward goals
+2: state is better that have the biggest ring connected to the second biggest ring and so on
+ this must be exponential in term of vlue so it is better for 3 ring connection in this way then
+  a two ring connections
 
 for more see rules.txt 
