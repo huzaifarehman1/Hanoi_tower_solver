@@ -344,12 +344,7 @@ def main():
             
         
     
-if __name__=="_main__":
+if __name__=="__main__":
     main()
-else: # if you want to test certain parts
-    state = board = [[2], [5, 1], [4], [3]] 
-    rings = 5
-    position = (1,0) # (tower number , height) for the largest ring all is 0 indexed
-    game = puzzle(len(state),rings,state,position)  
-    print(x:=SOLVER(game),len(x[1])) 
+
          
