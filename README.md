@@ -25,9 +25,12 @@ it uses A* to solve the puzzle by continuesly storing its child and visiting bes
 
 the heuristic Function or the evaluation of state is based on following
 
-1: the more spread out the better it is to make choice toward goals
+1: the more spread out the better it is to make choice toward goals however it forget the better path in this way so i want to see the state the are in one tower as the best so actually the more spread out the worse
+
 2: state is better that have the biggest ring connected to the second biggest ring and so on
- this must be exponential in term of vlue so it is better for 3 ring connection in this way then
+ this must be in such way of term of vlue so it is better for 3 ring connection in this way then
   a two ring connections
+
+so cost = spread - correct positioned ^ 2 when best state = lowest cost
 
 for more see rules.txt 
